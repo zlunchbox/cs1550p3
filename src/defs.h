@@ -13,7 +13,17 @@ struct inode *create(char *path, short type, short major, short minor);
 
 // For Project 3 ******************************************
 
+struct swapp;
+
 int isdirempty(struct inode *dp);
+int stinit();                     // Initialize swap tracker structure
+int add_page();                   // Add a page to the swap tracker
+int remove_page(char* va);        // Remove a page from the swap tracker
+
+int createSwapFile(struct proc *p);
+int readFromSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
+int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
+int removeSwapFile(struct proc *p);
 
 // ********************************************************
 

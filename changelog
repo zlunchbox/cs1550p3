@@ -1,0 +1,28 @@
+   Changelog for files within xv6
+------------------------------------
+    * defs.h
+	|--- Modified to include required declarations from project
+	     specification, as well as swap file manipulation functions.
+
+    * sysfile.c
+	|--- Required modifications according to project specification;
+	     static declarations removed from create() and isdirempty().
+
+    * fs.c
+	|--- Appended provided swap file manipulation code.
+
+    * proc.h
+	|--- Modifications to proc table (for swapped page tracking)
+	     and definition of swapped page tracking structure 
+             (struct swapp).
+
+    * proc.c
+	|--- Contains call (in exit() method) for closing and removing
+	     process' swap file. 
+
+    * mmu.h
+	|--- Modification to include "swapped out" flag (PTE_PG).
+
+    * exec.c
+	|--- Contains call to createSwapFile() for new processes that are
+	     not "sh" or "init".
