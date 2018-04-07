@@ -18,7 +18,10 @@
 	|    and definition of swapped page tracking structure 
         |    (struct swapp).
 	|
-	|--- Added implementations for swap tracker manipulation 
+	|--- Added implementations for swap tracker manipulation:
+		|--- stinit(struct proc *p)
+		|--- add_page(void *va, struct proc *p, struct swapp *n)
+		|--- remove_page(void *va, struct proc *p) 
 
     * proc.c
 	|--- Contains call (in exit() method) for closing and removing

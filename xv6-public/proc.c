@@ -579,9 +579,38 @@ procdump(void)
    // page-aligned), aligns the address, and removes it from the
    // given process' proc structure.
    // Returns the index of the removed page and adjusts the tracker
-   // appropriately.
+   // appropriately, or -1 if there was an error.
    int remove_page(void *va, struct proc *p) {
-      return 0;
+      struct swapp *cur = p->head;
+      struct swapp *prev = 0;
+      char *va_char = (char*) PGROUNDUP((uint) va);
+      int index = -1;
+
+      // Single node case
+      if(cur->next == 0) {
+	if(cur->va == va_char) index = cur->index;
+	else return index;
+      }
+
+      else {
+	// Find node with matching va
+	do {
+	  if(cur->va == va_char) index = cur->index;
+	  else {
+	    prev = cur;
+
+	    if(cur->next == 0) break;
+	    else cur = cur->next;
+	  }
+	} while(index == -1);
+
+	// Remove node
+	if(prev == 0) p->head = cur->next; // First node removed.
+	else if(cur->next == 0) prev->next = 0; // Last node removed.
+	else prev->next = cur->next; // Middle node removed.
+      }
+
+      return index;
    }
 
 // **********************************************************************
