@@ -2,7 +2,9 @@
 ------------------------------------
     * defs.h
 	|--- Modified to include required declarations from project
-	     specification, as well as swap file manipulation functions.
+	|    specification, as well as swap file manipulation functions.
+	|
+	|--- Added definitions of swap tracker manipulation functions.
 
     * sysfile.c
 	|--- Required modifications according to project specification;
@@ -13,8 +15,10 @@
 
     * proc.h
 	|--- Modifications to proc table (for swapped page tracking)
-	     and definition of swapped page tracking structure 
-             (struct swapp).
+	|    and definition of swapped page tracking structure 
+        |    (struct swapp).
+	|
+	|--- Added implementations for swap tracker manipulation 
 
     * proc.c
 	|--- Contains call (in exit() method) for closing and removing
