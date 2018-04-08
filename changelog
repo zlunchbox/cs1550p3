@@ -29,6 +29,9 @@
 
     * mmu.h
 	|--- Modification to include "swapped out" flag (PTE_PG).
+	|
+	|--- Added user process page limitation MAX_PSYC_PAGES (15)
+	|    and MAX_TOTAL_PAGES (30) macros
 
     * exec.c
 	|--- Contains call to createSwapFile() for new processes that are

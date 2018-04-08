@@ -17,7 +17,7 @@ struct swapp;
 
 int isdirempty(struct inode *dp);
 void stinit(struct proc *p);			  // Initialize swap tracker for given process.
-int add_page(void *va, struct proc *p, struct swapp *n);           // Add a page to the swap tracker
+int add_page(void *va, struct proc *p);           // Add a page to the swap tracker
 int remove_page(void *va, struct proc *p);        // Remove a page from the swap tracker
 
 int createSwapFile(struct proc *p);

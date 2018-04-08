@@ -38,8 +38,6 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
    struct swapp {
 	char *va;              // (Rounded) Virtual Address
-	int index;             // Index of this page in swap file
-	struct swapp *next;    // Pointer to next swap file tracker
    };
 
 // **********************************************************************
@@ -61,8 +59,8 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   // For Project 3 ******************************************************
-  struct file *swapFile;       // Swap space file pointer
-  struct swapp *head;          // Pointer to head of swapped page tracker
+  struct file *swapFile;       		// Swap space file pointer
+  struct swapp sout[MAX_TOTAL_PAGES];   // Swapped page tracker array
   // ********************************************************************
 };
 
