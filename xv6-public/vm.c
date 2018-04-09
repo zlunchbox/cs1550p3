@@ -383,6 +383,39 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
+// For Project 3 ********************************************************
+
+// Find the user PTE for the given virtual address and check if its
+// PTE_PG flag is set.
+
+int check_pte_pg(char* va) {
+   return 0;
+}
+
+// Page out the PTE for the given virtual address. This includes...
+// (1) Look up the PTE for the given virtual address
+// (2) Set its PTE_P flag to 0 and its PTE_PG flag to 1
+// (3) Access the data stored in the page and write it to the
+//     calling process' swap file.
+// (4) Update the process' swaped file tracker.
+int page_out(char* va) {
+   return 0;
+}
+
+// Page in the PTE for the given virtual address. This includes...
+// (1) Check the calling processes' swap tracker for an entry
+//     matching the given va.
+// (2) Remove the entry from the tracking structure, collecting
+//     necessary information (index in swap file)
+// (3) Collect/remove data from swap file
+// (4) Load data into new frame, mapping that frame to the appropriate
+//     user page.
+int page_in(char* va) {
+   return 0;
+}
+// **********************************************************************
+
+
 //PAGEBREAK!
 // Blank page.
 //PAGEBREAK!
