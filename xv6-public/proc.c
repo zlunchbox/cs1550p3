@@ -158,10 +158,21 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz;
+  uint sz, pages;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
+
+  // For Project 3 ******************************************************
+
+  pages = sz / PGSIZE;			//Perform truncating division to find how many pages currently used by process with memory of "sz" bytes.
+  if(pages > MAX_PSYC_PAGES) {
+     cprintf("MAX_PSYC_PAGES reached! - %s\n", curproc->name);
+     return -1; //If pages exceeds the limit, we'll have to page out!
+  }
+
+  // ********************************************************************
+
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;

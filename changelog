@@ -14,9 +14,8 @@
 	|--- Appended provided swap file manipulation code.
 
     * proc.h
-	|--- Modifications to proc table (for swapped page tracking)
-	|    and definition of swapped page tracking structure 
-        |    (struct swapp).
+	|--- Modifications to proc structure (for swapped page tracking),
+	|    definition of swapped page tracking struct (struct swapp).
 	|
 	|--- Added implementations for swap tracker manipulation:
 		|--- stinit(struct proc *p)
