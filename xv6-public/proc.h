@@ -61,6 +61,14 @@ struct proc {
   // For Project 3 ******************************************************
   struct file *swapFile;       		// Swap space file pointer
   struct swapp sout[MAX_TOTAL_PAGES];   // Swapped page tracker array
+
+  int pagesinmem;  //Number of pages in physical memory
+  int pagesinswampfile; //Number of pages in swap file
+  int totalPageFaultCount; //Total number of page faults
+  int totalPagedOutCount; //Total number of pages that were swapped out
+  struct freepg freepages[MAX_PSYC_PAGES]; //Space for pages in physical memory linked list
+  struct freepg* head; //Head of pages in physical memory ll
+  struct freepg* tail; //End of pages in physical memory ll
   // ********************************************************************
 };
 
