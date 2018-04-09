@@ -41,3 +41,4 @@
 	     algorithm per task 2.
     * vm.c
 	|--- Modified allocuvm and deallocuvm to support FIFO page replacement algorithm.  
+	|--- Reverted vm.c to vanilla copy.
