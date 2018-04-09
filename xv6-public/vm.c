@@ -216,13 +216,77 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
   return 0;
 }
 
+void
+trackNewPage(char *va) {
+  #if FIFO
+  int i, flag = 0;
+  for (i = 0; i < MAX_PSYC_PAGES; i++) {
+    //Using 0xffffffff to track the end of the page list
+    if (proc->freepages[i].va == (char*)0xffffffff) {
+      flag = i;
+      break;
+    }
+  }
+  if (!flag) {
+    panic("No free pages");
+  } else {
+    proc->freepages[i].va = va; //Virtual address for page
+    proc->freepages[i].next = proc->head; //Stick this page at the front of the queue    
+    proc->head = &proc->freepages[i]; //New head of page list
+  }
+  #endif
+
+  proc->pagesinmem++;
+}
+
+struct freepg*
+swapPageOut(char* va) {
+  #if FIFO
+  int i, flag = 0;
+  struct freepg* tmp, *l;
+  for (i = 0; i < MAX_TOTAL_PAGES; i++) {
+    if (proc->swapp[i].va == (char*) 0xffffffff) { //The tail
+      flag = i;
+      break;
+    }
+  }
+  if (!flag)
+    panic("No slot available for swapped page");
+  tmp = proc->head;
+  if (tmp == 0)
+    panic("Head of page list is null");
+  if (tmp->next == 0)
+    panic("Only one page in memory");
+  //Traversing down to the end of our page list and lobbing off the tail
+  while (tmp->next->next != 0)
+    tmp = tmp->next;
+  l = tmp->next;
+  tmp->next = 0;
+  add_page((void*) va, proc, proc->swapp);
+  int num = 0;
+  if ((num = writeToSwapFile(proc, (char*) PTE_ADDR(l->va), i * PGSIZE, PGSIZE)) == 0)
+    return 0;
+  pte_t *pte1 = walkpgdir(proc->pgdir, (void*) l->va, 0); //What's happening here?
+  if (!*pte1)
+    panic("Pte1 is empty");
+  kfree( (char*) PTE_ADDR(P2V_W0(*walkpgdir(proc->pgdir, (void*) l->va, 0))));
+  *pte1 = PTE_W | PTE_U | PTE_PG;
+  ++proc->totalPagedOutCount;
+  ++proc->pagesinswapfile;
+  lcr3(v2p(proc->pgdir));
+  return l;
+  #endif
+  return 0;
+}
+
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 int
 allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
   char *mem;
-  uint a;
+  uint a, newpage = 1;
+  struct freepg* free_page;
 
   if(newsz >= KERNBASE)
     return 0;
@@ -231,11 +295,29 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
   a = PGROUNDUP(oldsz);
   for(; a < newsz; a += PGSIZE){
+
+    if (proc->pagesinmem >= MAX_PSYC_PAGES) { //Must write to swap file!
+      if ((free_page = swapPageOut( (char*) a)) == 0) { //Some error
+        panic("Could not swap page out");
+      }
+      //We have this FIFO step here because we're reordering the queue since we've
+      //swapped out one of the pages.  
+      #if FIFO
+      free_page->va = (char*) a;
+      free_page->next = proc->head;
+      proc->head = free_page;
+      #endif
+      newpage = 0; //Not a new page because it was swapped out
+    }
+    
     mem = kalloc();
     if(mem == 0){
       cprintf("allocuvm out of memory\n");
       deallocuvm(pgdir, newsz, oldsz);
       return 0;
+    }
+    if (newpage) {
+      trackNewPage( (char*) a);
     }
     memset(mem, 0, PGSIZE);
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
@@ -257,6 +339,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
   pte_t *pte;
   uint a, pa;
+  int i;
 
   if(newsz >= oldsz)
     return oldsz;
@@ -270,9 +353,47 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
+      if(proc->pgdir == pgdir) {
+        int flag = 0;
+        for (i = 0; i < MAX_PSYC_PAGES; i++) {
+          if (proc->freepages[i].va == (char*) a) {
+            flag = i;
+            break;
+          }
+        }
+        if (!flag) 
+          panic("Entry not found in free page list");
+        proc->freepages[i].va = (char*) 0xffffffff;
+        #if FIFO
+        if (proc->head == *proc->freepages[i]) 
+          proc->head = proc->freepages[i].next;
+        else {
+          struct freepg* l = proc->head;
+          while (l->next != &proc->freepages[i]) //Traversal
+            l = l->next;
+          l->next = proc->freepages[i].next;
+        }
+        proc->freepages[i].next = 0;
+        #endif
+        proc->pagesinmem--;
+      }
       char *v = P2V(pa);
       kfree(v);
       *pte = 0;
+    } else if (*pte & PTE_PG && proc->pgdir == pgdir) {
+      int other_flag = 0;
+      for (i = 0; i < MAX_PSYC_PAGES; i++) {
+        if (proc->swapp[i].va == (char*) a) {
+          other_flag = i;
+          break;
+        }
+      }
+      if (!other_flag) 
+        panic("Entry not in swapp");
+      proc->swapp[i].va = (char*) 0xffffffff;
+      proc->swapp[i].age = 0;
+      proc->swapp[i].swaploc = 0;
+      proc->pagesinswapfile--;
     }
   }
   return newsz;

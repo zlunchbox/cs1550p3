@@ -36,3 +36,5 @@
     * Makefile
 	|--- Added rule for SELECTION flag to specifiy page replacement
 	     algorithm per task 2.
+    * vm.c
+	|--- Modified allocuvm and deallocuvm to support FIFO page replacement algorithm.  
