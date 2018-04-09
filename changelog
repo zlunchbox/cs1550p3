@@ -33,3 +33,6 @@
     * exec.c
 	|--- Contains call to createSwapFile() for new processes that are
 	     not "sh" or "init".
+    * Makefile
+	|--- Added rule for SELECTION flag to specifiy page replacement
+	     algorithm per task 2.
