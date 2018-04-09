@@ -1,6 +1,14 @@
 // This file contains definitions for the
 // x86 memory management unit (MMU).
 
+// For Project 3 ********************************************************
+
+#define PTE_PG		0x200   // Paged out to secondary storage
+#define MAX_PSYC_PAGES  0x0F    // 0x0F (15) page swap limit
+#define MAX_TOTAL_PAGES 0x1E    // 0x1E (30) page total limit
+
+// **********************************************************************
+
 // Eflags register
 #define FL_CF           0x00000001      // Carry Flag
 #define FL_PF           0x00000004      // Parity Flag
@@ -141,7 +149,6 @@ struct segdesc {
 #define PTE_D           0x040   // Dirty
 #define PTE_PS          0x080   // Page Size
 #define PTE_MBZ         0x180   // Bits must be zero
-#define PTE_PG		0x200   // Paged out to secondary storage
 
 // Address in page table or page directory entry
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)

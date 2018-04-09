@@ -158,10 +158,21 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz;
+  uint sz, pages;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
+
+  // For Project 3 ******************************************************
+
+  pages = sz / PGSIZE;			//Perform truncating division to find how many pages currently used by process with memory of "sz" bytes.
+  if(pages > MAX_PSYC_PAGES) {
+     cprintf("MAX_PSYC_PAGES reached! - %s\n", curproc->name);
+     return -1; //If pages exceeds the limit, we'll have to page out!
+  }
+
+  // ********************************************************************
+
   if(n > 0){
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
@@ -546,71 +557,43 @@ procdump(void)
    // Returns 0.
 
    void stinit(struct proc *p) {
-      struct swapp *cur = p->head;
-
-      cur->va = 0;
-      cur->index = 0;
-      cur->next = 0;
+      int i = 0;
+      for(; i < MAX_TOTAL_PAGES; i++) p->sout[i].va = (char*) -1;
    }
 
    // Takes a void-typed pointer to a virtual address (not necessarily
-   // page-aligned), aligns the address, and adds it with the next
-   // index to the given process' proc structure.
-   // Must be passed a caller-allocated struct swapp for new nodes.
+   // page-aligned), aligns the address, and adds it the next available
+   // index in the given process' sout array.
    // Returns swap file index of page.
-   int add_page(void *va, struct proc *p, struct swapp *n) {
-      struct swapp *cur = p->head;
-      char *va_char = (char*) PGROUNDUP((uint) va);
+   int add_page(void *va, struct proc *p) {
+      char* va_char = (char*)PGROUNDUP((uint) va);
+      struct swapp *soa = p->sout;
+      int i = 0;
 
-      if(cur->next == 0 && cur->va == 0) {
-	cur->va = va_char;  
-      }
-      else {
-	n->va = va_char;
-	n->index = cur->index + 1;
-	n->next = cur;
-	p->head = n;
+      for(; i < MAX_TOTAL_PAGES; i++) {
+	if(soa[i].va == (char*) -1) {
+	   soa[i].va = va_char;
+	   break;
+	}
       }
 
-      return n->index;
+      return i;
    }
 
    // Takes a void-typed pointer to a virtual address (not necessarily
    // page-aligned), aligns the address, and removes it from the
-   // given process' proc structure.
-   // Returns the index of the removed page and adjusts the tracker
-   // appropriately, or -1 if there was an error.
+   // given process' sout array, resetting the va variable to -1.
+   // Returns the index of the removed page or -1 if there was an error.
    int remove_page(void *va, struct proc *p) {
-      struct swapp *cur = p->head;
-      struct swapp *prev = 0;
-      char *va_char = (char*) PGROUNDUP((uint) va);
-      int index = -1;
+      char* va_char = (char*)PGROUNDUP((uint) va);
+      struct swapp *soa = p->sout;
+      int i = 0;
 
-      // Single node case
-      if(cur->next == 0) {
-	if(cur->va == va_char) index = cur->index;
-	else return index;
+      for(; i < MAX_TOTAL_PAGES; i++) {
+	if(soa[i].va == va_char) return i;
       }
 
-      else {
-	// Find node with matching va
-	do {
-	  if(cur->va == va_char) index = cur->index;
-	  else {
-	    prev = cur;
-
-	    if(cur->next == 0) break;
-	    else cur = cur->next;
-	  }
-	} while(index == -1);
-
-	// Remove node
-	if(prev == 0) p->head = cur->next; // First node removed.
-	else if(cur->next == 0) prev->next = 0; // Last node removed.
-	else prev->next = cur->next; // Middle node removed.
-      }
-
-      return index;
+      return -1;
    }
 
 // **********************************************************************
