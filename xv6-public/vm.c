@@ -11,7 +11,7 @@ extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
 struct page {
-  char* va;             //Virtual address
+  char* a;             //Address
   int activity_counter; //How many ticks has this particular page been alive for?
   int index;            //Index in pagelist
   struct page* next;
@@ -20,10 +20,10 @@ struct page {
 struct page* head = 0; //TEMP VALUE
 struct page* tail = 0; //TEMP VALUE
 struct page pagelist[MAX_TOTAL_PAGES];
+int pagelist_count = 0;
 
 char* my_kalloc(void) {
   int i;
-
   if (!head) {
     for (i = 0; i < MAX_TOTAL_PAGES; i++) 
       pagelist[i].index = -1;
@@ -34,30 +34,34 @@ char* my_kalloc(void) {
     tail->next = 0;
     tail->prev = head;
   }
-  char* va = kalloc();
-  
+  char* a = kalloc();
+
   for (i = 0; i < MAX_TOTAL_PAGES; i++) {
     if (pagelist[i].index == -1) break;
   }
   if (i == MAX_TOTAL_PAGES) 
     panic("No space in pagelist remaining");
-  pagelist[i].va = va;
+  pagelist[i].a = a;
   pagelist[i].activity_counter = 0;
   pagelist[i].prev = tail;
   pagelist[i].next = 0;
   tail->next = pagelist + i;
   tail = tail->next;
 
-  return va;
+  pagelist_count++;
+  return a;
 }
 
 void my_kfree(char* v) {
-  struct page* current = head;
-  while (current != tail) {
-    if (current->va == v) {
-      current->prev->next = current->next;
-      current->next->prev = current->prev;
-      current->index = -1;
+  int i;
+
+  for (i = 0; i < MAX_TOTAL_PAGES; i++) {
+    if (pagelist[i].index == -1) continue;
+    if (pagelist[i].a == v) {
+      pagelist[i].prev->next = pagelist[i].next;
+      pagelist[i].next->prev = pagelist[i].prev;
+      pagelist[i].index = -1;
+      pagelist_count--;
       break;
     }
   }
@@ -80,6 +84,7 @@ seginit(void)
   c->gdt[SEG_UCODE] = SEG(STA_X|STA_R, 0, 0xffffffff, DPL_USER);
   c->gdt[SEG_UDATA] = SEG(STA_W, 0, 0xffffffff, DPL_USER);
   lgdt(c->gdt, sizeof(c->gdt));
+
 }
 
 // Return the address of the PTE in page table pgdir
@@ -105,6 +110,20 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
   return &pgtab[PTX(va)];
+}
+
+void lru_update(struct proc* p) {
+  pte_t* pte;
+  int i;
+
+  for (i = 0; i < MAX_TOTAL_PAGES; i++) {
+    if (pagelist[i].index == -1) continue;
+    pte = walkpgdir(p->pgdir, pagelist[i].a, 0);
+    if (*pte & PTE_A)
+      pagelist[i].activity_counter++;
+    *pte &= ~PTE_A;
+  }
+
 }
 
 // Create PTEs for virtual addresses starting at va that refer to

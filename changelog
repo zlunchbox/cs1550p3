@@ -5,6 +5,8 @@
 	|    specification, as well as swap file manipulation functions.
 	|
 	|--- Added definitions of swap tracker manipulation functions.
+	|--- Added definition of void lru_update(struct proc*) from vm.c 
+	     for use in trap.c
 
     * sysfile.c
 	|--- Required modifications according to project specification;
@@ -48,3 +50,5 @@
 	|--- Added my_kalloc and my_kfree which support the queue we'll be using for 
 	     FIFO and LRU.  They're wrappers for kalloc() and kfree() with added logic
 	     for the custom data structure.  
+	|--- Added lru_update which is called by a running process every tick.  Now a merge
+	     is necessary to proceed with task 2 (we need a palce for the get_victim method).
