@@ -15,6 +15,8 @@ struct inode *create(char *path, short type, short major, short minor);
 
 struct swapp;
 
+typedef uint pte_t;
+
 int isdirempty(struct inode *dp);
 void stinit(struct proc *p);			  // Initialize swap tracker for given process.
 int add_page(void *va, struct proc *p);           // Add a page to the swap tracker
@@ -25,6 +27,9 @@ int readFromSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
 int writeToSwapFile(struct proc *p, char *buffer, uint placeOnFile, uint size);
 int removeSwapFile(struct proc *p);
 
+int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
+
+pte_t* get_victim();
 // ********************************************************
 
 // bio.c
@@ -202,6 +207,8 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+pte_t* 		walkpgdir(pde_t *pgdir, const void *va, int alloc);
+
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -158,18 +158,12 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint sz, pages;
+  uint sz;
   struct proc *curproc = myproc();
 
   sz = curproc->sz;
 
   // For Project 3 ******************************************************
-
-  pages = sz / PGSIZE;			//Perform truncating division to find how many pages currently used by process with memory of "sz" bytes.
-  if(pages > MAX_PSYC_PAGES) {
-     cprintf("MAX_PSYC_PAGES reached! - %s\n", curproc->name);
-     return -1; //If pages exceeds the limit, we'll have to page out!
-  }
 
   // ********************************************************************
 
@@ -566,7 +560,7 @@ procdump(void)
    // index in the given process' sout array.
    // Returns swap file index of page.
    int add_page(void *va, struct proc *p) {
-      char* va_char = (char*)PGROUNDUP((uint) va);
+      char* va_char = (char*)PGROUNDDOWN((uint) va);
       struct swapp *soa = p->sout;
       int i = 0;
 
@@ -585,7 +579,7 @@ procdump(void)
    // given process' sout array, resetting the va variable to -1.
    // Returns the index of the removed page or -1 if there was an error.
    int remove_page(void *va, struct proc *p) {
-      char* va_char = (char*)PGROUNDUP((uint) va);
+      char* va_char = (char*)PGROUNDDOWN((uint) va);
       struct swapp *soa = p->sout;
       int i = 0;
 

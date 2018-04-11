@@ -5,6 +5,8 @@
 	|    specification, as well as swap file manipulation functions.
 	|
 	|--- Added definitions of swap tracker manipulation functions.
+	|
+	|--- Added declaration of walkpgdir, defined in vm.c
 
     * sysfile.c
 	|--- Required modifications according to project specification;
@@ -15,7 +17,8 @@
 
     * proc.h
 	|--- Modifications to proc structure (for swapped page tracking),
-	|    definition of swapped page tracking struct (struct swapp).
+	|    definition of swapped page tracking struct (struct swapp),
+	|    addition of paging state variables
 	|
 	|--- Added implementations for swap tracker manipulation:
 		|--- stinit(struct proc *p)
@@ -35,6 +38,7 @@
     * exec.c
 	|--- Contains call to createSwapFile() for new processes that are
 	     not "sh" or "init".
+ 
     * Makefile
 	|--- Added rule for SELECTION flag to specifiy page replacement
 	     algorithm per task 2.
