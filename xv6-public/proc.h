@@ -40,13 +40,6 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 	char *va;              // (Rounded) Virtual Address
    };
 
-struct freepg {
-  char *va; //Virtual address
-  int age; //For LRU
-  struct freepg* next;
-  struct freepg* prev;
-}
-
 // **********************************************************************
 
 // Per-process state
@@ -68,9 +61,6 @@ struct proc {
   // For Project 3 ******************************************************
   struct file *swapFile;       		// Swap space file pointer
   struct swapp sout[MAX_TOTAL_PAGES];   // Swapped page tracker array
-  struct freepg freepages[MAX_PSYC_PAGES];
-  struct freepg* head;
-  struct freepg* tail;
   // ********************************************************************
 };
 

@@ -23,6 +23,8 @@
 		|--- remove_page(void *va, struct proc *p) 
 	|--- Added declaractions for page fault counts, page list counts, page list space
 	|--- Reverted above change
+	|--- Added declaration of freepg struct, and added properties for each process relating to free page list.  
+	|--- Once again reverted above change
 
     * proc.c
 	|--- Contains call (in exit() method) for closing and removing
@@ -43,3 +45,6 @@
     * vm.c
 	|--- Modified allocuvm and deallocuvm to support FIFO page replacement algorithm.  
 	|--- Reverted vm.c to vanilla copy.
+	|--- Added my_kalloc and my_kfree which support the queue we'll be using for 
+	     FIFO and LRU.  They're wrappers for kalloc() and kfree() with added logic
+	     for the custom data structure.  

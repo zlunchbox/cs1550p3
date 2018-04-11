@@ -10,6 +10,59 @@
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
+struct page {
+  char* va;             //Virtual address
+  int activity_counter; //How many ticks has this particular page been alive for?
+  int index;            //Index in pagelist
+  struct page* next;
+  struct page* prev;  
+};
+struct page* head = 0; //TEMP VALUE
+struct page* tail = 0; //TEMP VALUE
+struct page pagelist[MAX_TOTAL_PAGES];
+
+char* my_kalloc(void) {
+  int i;
+
+  if (!head) {
+    for (i = 0; i < MAX_TOTAL_PAGES; i++) 
+      pagelist[i].index = -1;
+    head = pagelist;
+    tail = pagelist;
+    head->next = tail;
+    head->prev = 0;
+    tail->next = 0;
+    tail->prev = head;
+  }
+  char* va = kalloc();
+  
+  for (i = 0; i < MAX_TOTAL_PAGES; i++) {
+    if (pagelist[i].index == -1) break;
+  }
+  if (i == MAX_TOTAL_PAGES) 
+    panic("No space in pagelist remaining");
+  pagelist[i].va = va;
+  pagelist[i].activity_counter = 0;
+  pagelist[i].prev = tail;
+  pagelist[i].next = 0;
+  tail->next = pagelist + i;
+  tail = tail->next;
+
+  return va;
+}
+
+void my_kfree(char* v) {
+  struct page* current = head;
+  while (current != tail) {
+    if (current->va == v) {
+      current->prev->next = current->next;
+      current->next->prev = current->prev;
+      current->index = -1;
+      break;
+    }
+  }
+}
+
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
 void
@@ -42,7 +95,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+    if(!alloc || (pgtab = (pte_t*)my_kalloc()) == 0)
       return 0;
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
@@ -121,7 +174,7 @@ setupkvm(void)
   pde_t *pgdir;
   struct kmap *k;
 
-  if((pgdir = (pde_t*)kalloc()) == 0)
+  if((pgdir = (pde_t*)my_kalloc()) == 0)
     return 0;
   memset(pgdir, 0, PGSIZE);
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
@@ -186,7 +239,7 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 
   if(sz >= PGSIZE)
     panic("inituvm: more than a page");
-  mem = kalloc();
+  mem = my_kalloc();
   memset(mem, 0, PGSIZE);
   mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
   memmove(mem, init, sz);
@@ -231,7 +284,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 
   a = PGROUNDUP(oldsz);
   for(; a < newsz; a += PGSIZE){
-    mem = kalloc();
+    mem = my_kalloc();
     if(mem == 0){
       cprintf("allocuvm out of memory\n");
       deallocuvm(pgdir, newsz, oldsz);
@@ -241,7 +294,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
       cprintf("allocuvm out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
-      kfree(mem);
+      my_kfree(mem);
       return 0;
     }
   }
@@ -271,7 +324,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       if(pa == 0)
         panic("kfree");
       char *v = P2V(pa);
-      kfree(v);
+      my_kfree(v);
       *pte = 0;
     }
   }
@@ -291,10 +344,10 @@ freevm(pde_t *pgdir)
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
       char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
+      my_kfree(v);
     }
   }
-  kfree((char*)pgdir);
+  my_kfree((char*)pgdir);
 }
 
 // Clear PTE_U on a page. Used to create an inaccessible
@@ -329,7 +382,7 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
+    if((mem = my_kalloc()) == 0)
       goto bad;
     memmove(mem, (char*)P2V(pa), PGSIZE);
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
