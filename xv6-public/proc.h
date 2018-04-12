@@ -1,3 +1,9 @@
+// For Project 3 ********************************************************
+
+#define EMPTY 0xFFFFFFFF
+
+// **********************************************************************
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -37,7 +43,7 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 // For Project 3 ********************************************************
 
    struct swapp {
-	char *va;              // (Rounded) Virtual Address
+	uint va;              // (Rounded) Virtual Address
    };
 
 // **********************************************************************

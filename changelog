@@ -20,10 +20,18 @@
 	|    definition of swapped page tracking struct (struct swapp),
 	|    addition of paging state variables
 	|
+	|--- NOTE: struct swapp is now a wrapper for unsigned integers,
+	|	   and thus all manipulations or comparisions
+	|	   of the swapped page addresses should be done with
+	|	   unsigned integers.
+	|
 	|--- Added implementations for swap tracker manipulation:
-		|--- stinit(struct proc *p)
-		|--- add_page(void *va, struct proc *p, struct swapp *n)
-		|--- remove_page(void *va, struct proc *p) 
+	|	|--- stinit(struct proc *p)
+	|	|--- add_page(void *va, struct proc *p)
+	|	|--- remove_page(void *va, struct proc *p) 
+	|
+	|--- Added macro EMPTY (0xFFFFFFFF) as a sentinal value
+	|    for unused swap space indice addresses
 
     * proc.c
 	|--- Contains call (in exit() method) for closing and removing

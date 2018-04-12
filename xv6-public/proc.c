@@ -552,7 +552,7 @@ procdump(void)
 
    void stinit(struct proc *p) {
       int i = 0;
-      for(; i < MAX_TOTAL_PAGES; i++) p->sout[i].va = (char*) -1;
+      for(; i < MAX_TOTAL_PAGES; i++) p->sout[i].va = EMPTY;
    }
 
    // Takes a void-typed pointer to a virtual address (not necessarily
@@ -560,13 +560,14 @@ procdump(void)
    // index in the given process' sout array.
    // Returns swap file index of page.
    int add_page(void *va, struct proc *p) {
-      char* va_char = (char*)PGROUNDDOWN((uint) va);
+      uint *va_int = (uint*) va;
+      *va_int = PGROUNDDOWN(*va_int);
       struct swapp *soa = p->sout;
       int i = 0;
 
       for(; i < MAX_TOTAL_PAGES; i++) {
-	if(soa[i].va == (char*) -1) {
-	   soa[i].va = va_char;
+	if(soa[i].va == EMPTY) {
+	   soa[i].va = *va_int;
 	   break;
 	}
       }
@@ -576,15 +577,16 @@ procdump(void)
 
    // Takes a void-typed pointer to a virtual address (not necessarily
    // page-aligned), aligns the address, and removes it from the
-   // given process' sout array, resetting the va variable to -1.
+   // given process' sout array, resetting the va variable to INVALID.
    // Returns the index of the removed page or -1 if there was an error.
    int remove_page(void *va, struct proc *p) {
-      char* va_char = (char*)PGROUNDDOWN((uint) va);
+      uint *va_int = (uint*) va;
+      *va_int = PGROUNDDOWN(*va_int);
       struct swapp *soa = p->sout;
       int i = 0;
 
       for(; i < MAX_TOTAL_PAGES; i++) {
-	if(soa[i].va == va_char) return i;
+	if(soa[i].va == *va_int) return i;
       }
 
       return -1;

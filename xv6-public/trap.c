@@ -94,7 +94,8 @@ trap(struct trapframe *tf)
      // (4) If the faulting address was swapped out, read it back in.
 
      struct proc *curproc = myproc();
-     void* addr = (void*) rcr2();
+     uint faddr = rcr2();
+     uint saddr;
      char buf[PGSIZE];
      pte_t *fpage, *spage;
      int index;
@@ -103,37 +104,43 @@ trap(struct trapframe *tf)
      if(curproc->totalPages >= MAX_TOTAL_PAGES) kill(curproc->pid);
 
      // Retrieve PTE and determine if paged out
-     fpage = walkpgdir(curproc->pgdir, addr, 0);
+     fpage = walkpgdir(curproc->pgdir, (void*) &faddr, 0);
 
      // If not, increment totalPages
-     if(!(*fpage & PTE_PG)) curproc->totalPages++;
+     if(~(*fpage & PTE_PG)) curproc->totalPages++;
 
      // Check if totalPhysicalPages < MAX_PSYC_PAGES
      // If so, increment totalPhysicalPages and allocate
      // a new physical page
      if(curproc->totalPhysicalPages < MAX_PSYC_PAGES) {
 	curproc->totalPhysicalPages++;
+	//TODO: Allocate new physical page
      }
      // If not, select a victim page, write out, and update
      else {
-	spage = get_victim(); 				 	   // Select victim page
-	memmove((void*) buf, (void*) PTE_ADDR(*spage), PGSIZE); // Get physical contents of page
-	index = add_page(addr, curproc);			   // Find available index in swap file
-	writeToSwapFile(curproc, buf, index, PGSIZE);		   // Write physical memory contents to swap file
+	spage = get_victim(); 	       		 	   // Select victim page
+	saddr = PTE_ADDR(*spage);
+        memmove((void*) buf, (void*) &saddr, PGSIZE); // Get physical contents of page
+	index = add_page((void*) &saddr, curproc);			   // Find available index in swap file
+	writeToSwapFile(curproc, buf, (uint)index*PGSIZE, PGSIZE);		   // Write physical memory contents to swap file
 	
 	// Mark victim's PTE as not present and paged out
 	*spage &= ~PTE_P;
 	*spage |= PTE_PG;
 
 	// Call mappages()
-	mappages(curproc->pgdir, addr, PGSIZE, PTE_ADDR(*spage), 0);
+	mappages(curproc->pgdir, (void*) &faddr, PGSIZE, saddr, 0);
 
 	// Check if the faulted address was swapped out
 	// If so, read in from swap file.
 	if(*fpage & PTE_PG) {
-	   index = remove_page(addr, curproc);
-	   readFromSwapFile(curproc, buf, index, PGSIZE);
-	   memmove((void*) PTE_ADDR(*fpage), (void*) buf, PGSIZE);
+	   index = remove_page((void*) &faddr, curproc);
+	   readFromSwapFile(curproc, buf, (uint)index*PGSIZE, PGSIZE);
+	   memmove((void*) &faddr, (void*) buf, PGSIZE);
+	}
+	// If not, set memory to 0.
+	else {
+	   memset((void*) &faddr, PGSIZE, 0);
 	}
      }
 
