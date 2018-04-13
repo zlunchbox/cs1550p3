@@ -20,7 +20,7 @@
 	|--- Modifications to proc structure (for swapped page tracking),
 	|    definition of swapped page tracking struct (struct swapp).
 	|
-	|--- Added implementations for swap tracker manipulation:
+	|--- Added implementations for swap tracker manipulation (in proc.c):
 		|--- stinit(struct proc *p)
 		|--- add_page(void *va, struct proc *p, struct swapp *n)
 		|--- remove_page(void *va, struct proc *p) 
@@ -29,6 +29,7 @@
 	|--- Added declaration of freepg struct, and added properties for each process relating to free page list.  
 	|--- Once again reverted above change
 	|--- Added totalPages and totalPhysicalPages to proc struct
+	|--- Added macro EMPTY 
 
     * proc.c
 	|--- Contains call (in exit() method) for closing and removing
