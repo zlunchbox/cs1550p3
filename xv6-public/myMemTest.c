@@ -8,7 +8,6 @@
 int main(int argc, char* argv[]) {
   int i, j;
   char* arr[18];
-  char input[10];
   
   for (i = 0; i < 16; i++) {
     arr[i] = sbrk(PGSIZE);
@@ -20,12 +19,12 @@ int main(int argc, char* argv[]) {
   arr[15] = sbrk(PGSIZE);
   printf(1, "arr[15]=0x%x\n", arr[13]); //Page fault
 
-  for (i = 0, i < 5; i++) {
+  for (i = 0; i < 5; i++) {
     for (j = 0; j < PGSIZE; j++) arr[i][j] = 'q';
   }
 
   if (fork() == 0) {
-    printf("Child\n");
+    printf(1, "Child\n");
     arr[5][0] = 'w';
     exit();
   } else {
