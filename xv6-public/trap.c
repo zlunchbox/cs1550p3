@@ -81,7 +81,7 @@ trap(struct trapframe *tf)
   // For Project 3 ******************************************************
 
   case T_PGFLT:
-     cprintf("page fault! - %s - 0x%x", myproc()->name, rcr2());
+     cprintf("page fault! - %s - 0x%x\n", myproc()->name, rcr2());
      // A number of things should be checked upon page fault
      // (1) Check totalPages of the calling process
      //	   (i) If totalPages >= MAX_TOTAL_PAGES, kill the process
@@ -115,6 +115,10 @@ trap(struct trapframe *tf)
      if(curproc->totalPhysicalPages < MAX_PSYC_PAGES) {
 	curproc->totalPhysicalPages++;
 	//TODO: Allocate new physical page
+	char* pa = kalloc();
+	mappages(curproc->pgdir, (void*) fpage, PGSIZE, (uint) pa, 0);
+	memset((void*) &faddr, PGSIZE, 0);
+	break;
      }
      // If not, select a victim page, write out, and update
      else {

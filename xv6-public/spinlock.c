@@ -114,8 +114,10 @@ popcli(void)
 {
   if(readeflags()&FL_IF)
     panic("popcli - interruptible");
-  if(--mycpu()->ncli < 0)
+  if(--mycpu()->ncli < 0) {
+    cprintf("ncli value: %d\n", mycpu()->ncli);
     panic("popcli");
+  }
   if(mycpu()->ncli == 0 && mycpu()->intena)
     sti();
 }
