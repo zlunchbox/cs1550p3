@@ -91,7 +91,7 @@ trap(struct trapframe *tf)
     uint saddr;
     char buf[PGSIZE];
     pte_t* fpage, *spage;
-    //int index;
+    int index;
     
     cprintf("page fault! - %s - 0x%x", p->name, faddr);
     //Check totalPages and kill process if appropriate

@@ -60,3 +60,6 @@
     * trap.c
 	|--- Added code for LRU update during timer interrupt
 	|--- Added logic for handling page faults per project specs (this breaks!)
+    * myMemTest.c
+	|-- Added implementation.  This code allocates 12 pages then does a series 
+            of page faults as a sanity test. 
