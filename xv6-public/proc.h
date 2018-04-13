@@ -61,6 +61,8 @@ struct proc {
   // For Project 3 ******************************************************
   struct file *swapFile;       		// Swap space file pointer
   struct swapp sout[MAX_TOTAL_PAGES];   // Swapped page tracker array
+  int totalPages;
+  int totalPhysicalPages;
   // ********************************************************************
 };
 

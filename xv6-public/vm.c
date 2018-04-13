@@ -90,7 +90,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -129,7 +129,7 @@ void lru_update(struct proc* p) {
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-static int
+int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
   char *a, *last;
@@ -453,6 +453,47 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     va = va0 + PGSIZE;
   }
   return 0;
+}
+
+static unsigned long randstate = 1;
+unsigned int max_rand() {
+  randstate = randstate * 1664525 + 1013904223;
+  return randstate;
+}
+long rand(long max) {
+  unsigned long num_bins = (unsigned long) max + 1,
+    num_rand = (unsigned long) 32767 + 1,
+    bin_size = num_rand / num_bins,
+    defect   = num_rand % num_bins;
+
+  long x;
+  do {
+    x = max_rand();
+  } while (num_rand - defect <= (unsigned long) x);
+
+  return x/bin_size;
+}
+
+pte_t* get_victim(pde_t* pgdir) {
+  cprintf("Picking a victim...\n");
+  char* va;
+  #if FIFO
+  va = P2V(head->a);
+  #elif LRU
+  int i, min = -1, min_i = -1;
+  for (i = 0; i < MAX_TOTAL_PAGES; i++) {
+    if (pagelist[i].index == -1) continue;
+    int tmp = pagelist[i].activity_counter;
+    if (min == -1 || tmp < min) {
+      min = tmp;
+      min_i = i;
+    }
+  }
+  va = P2V(pagelist[min_i].a);
+  #elif RAND
+  va = P2V(pagelist[rand((long) pagelist_count)].a);
+  #endif
+  return walkpgdir(pgdir, va, 0);
 }
 
 //PAGEBREAK!

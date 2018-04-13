@@ -7,6 +7,7 @@
 	|--- Added definitions of swap tracker manipulation functions.
 	|--- Added definition of void lru_update(struct proc*) from vm.c 
 	     for use in trap.c
+	|--- Added definition of mappages, walkpgdir, and get_victim
 
     * sysfile.c
 	|--- Required modifications according to project specification;
@@ -27,6 +28,7 @@
 	|--- Reverted above change
 	|--- Added declaration of freepg struct, and added properties for each process relating to free page list.  
 	|--- Once again reverted above change
+	|--- Added totalPages and totalPhysicalPages to proc struct
 
     * proc.c
 	|--- Contains call (in exit() method) for closing and removing
@@ -52,3 +54,7 @@
 	     for the custom data structure.  
 	|--- Added lru_update which is called by a running process every tick.  Now a merge
 	     is necessary to proceed with task 2 (we need a palce for the get_victim method).
+	|--- Added get_victim method
+    * trap.c
+	|--- Added code for LRU update during timer interrupt
+	|--- Added logic for handling page faults per project specs (this breaks!)

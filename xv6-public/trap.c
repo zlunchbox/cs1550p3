@@ -51,10 +51,10 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;      
-      
+      #if LRU
       if (myproc() && myproc()->state == RUNNING)
         lru_update(myproc());
-      
+      #endif
       wakeup(&ticks);
       release(&tickslock);
     }
@@ -84,8 +84,58 @@ trap(struct trapframe *tf)
 
   // For Project 3 ******************************************************
 
-  case T_PGFLT:
-     cprintf("page fault! - %s - 0x%x", myproc()->name, rcr2());
+  case T_PGFLT:;
+    
+    uint faddr = rcr2();
+    struct proc* p = myproc();
+    uint saddr;
+    char buf[PGSIZE];
+    pte_t* fpage, *spage;
+    //int index;
+    
+    cprintf("page fault! - %s - 0x%x", p->name, faddr);
+    //Check totalPages and kill process if appropriate
+    if(p->totalPages >= MAX_TOTAL_PAGES) kill(p->pid);
+
+    //Retrieve PTE and determine if paged out
+    fpage = walkpgdir(p->pgdir, (void*) &faddr, 0);
+    
+    //If not, increment totalPages
+    if(~(*fpage & PTE_PG)) p->totalPages++;
+    
+    //Check if totalPhysicalPages < MAX_PSYC_PAGES
+    //If so, increment totalPhysicalPages and allocate
+    //a new physical page
+    if(p->totalPhysicalPages < MAX_PSYC_PAGES) {
+      p->totalPhysicalPages++;
+      allocuvm(p->pgdir, p->totalPhysicalPages * PGSIZE, 
+               p->totalPhysicalPages * PGSIZE + PGSIZE);
+      break;
+    } else { //If not, select a victim, write out, and update
+      spage = get_victim(p->pgdir);
+      saddr = PTE_ADDR(*spage);
+      memmove((void*) buf, (void*) saddr, PGSIZE); //Get physical contents of page
+
+      index = add_page((void*) &saddr, p); //Find available index in swap file
+      
+      writeToSwapFile(p, buf, (uint) index * PGSIZE, PGSIZE);
+
+      //Mark victim's PTE as not present and paged out
+      *spage &= ~PTE_P;
+      *spage |= PTE_PG;
+
+      mappages(p->pgdir, (void*) &faddr, PGSIZE, saddr, 0);
+
+      //Check if faulted address was swapped out and read in if so
+      if (*fpage & PTE_PG) {
+        index = remove_page((void*) &faddr, p);
+        readFromSwapFile(p, buf, (uint) index * PGSIZE, PGSIZE);
+        memmove((void*) &faddr, (void*) buf, PGSIZE);
+      } else { //Otherwise set memory to 0
+        memset((void*) &faddr, PGSIZE, 0);
+      }
+    }
+    break;
 
   // ********************************************************************
 

@@ -13,6 +13,8 @@ struct inode *create(char *path, short type, short major, short minor);
 
 // For Project 3 ******************************************
 
+typedef uint pte_t;
+
 struct swapp;
 
 int isdirempty(struct inode *dp);
@@ -203,6 +205,9 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 void            lru_update(struct proc*);
+pte_t*          get_victim(pde_t*);
+pte_t*          walkpgdir(pde_t*, const void*, int);
+int             mappages(pde_t*, void*, uint, uint, int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
