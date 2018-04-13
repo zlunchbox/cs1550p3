@@ -55,6 +55,7 @@
 	|--- Added lru_update which is called by a running process every tick.  Now a merge
 	     is necessary to proceed with task 2 (we need a palce for the get_victim method).
 	|--- Added get_victim method
+	|--- Added definitions for page_out, page_in, and get_pte_pg 
     * trap.c
 	|--- Added code for LRU update during timer interrupt
 	|--- Added logic for handling page faults per project specs (this breaks!)

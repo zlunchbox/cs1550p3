@@ -495,6 +495,27 @@ pte_t* get_victim(pde_t* pgdir) {
   #endif
   return walkpgdir(pgdir, va, 0);
 }
+//TODO
+// Find the user PTE for the given va and check if PTE_PG is set
+int check_pte_pg(char* va) {
+  return 0;
+}
+//Page out PTE for given va
+//(1) Look up PTE for va
+//(2) Set PTE_P to 0 and PTE_PG to 1
+//(3) Access data in that page and write to calling proc's swap file
+//(4) Update proc's swapped file tracker
+int page_out(char* va) {
+  return 0;
+}
+//Page in PTE for given va
+//(1) Check calling proc's swap tracker for entry matching va
+//(2) Remove entry from tracking struct, collecting necessary info (index in swap file)
+//(3) Collect/remove data from swap file
+//(4) Load data into new frame, mapping that frame to appropriate user page
+int page_in(char* va) {
+  return 0;
+}
 
 //PAGEBREAK!
 // Blank page.
