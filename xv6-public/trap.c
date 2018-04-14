@@ -36,6 +36,14 @@ idtinit(void)
 void
 trap(struct trapframe *tf)
 {
+  uint faddr = rcr2();
+  struct proc* p = myproc();
+  uint saddr;
+  char buf[PGSIZE];
+  pte_t* fpage, *spage;
+  int index;
+
+
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -51,10 +59,10 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;      
-      #if LRU
-      if (myproc() && myproc()->state == RUNNING)
-        lru_update(myproc());
-      #endif
+//      #if LRU
+//      if (myproc() && myproc()->state == RUNNING)
+//        lru_update(myproc());
+//      #endif
       wakeup(&ticks);
       release(&tickslock);
     }
@@ -84,16 +92,9 @@ trap(struct trapframe *tf)
 
   // For Project 3 ******************************************************
 
-  case T_PGFLT:;
-    
-    uint faddr = rcr2();
-    struct proc* p = myproc();
-    uint saddr;
-    char buf[PGSIZE];
-    pte_t* fpage, *spage;
-    int index;
-    
-    cprintf("page fault! - %s - 0x%x", p->name, faddr);
+  case T_PGFLT:
+    cprintf("in page fault\n");
+    cprintf("page fault! - %s - 0x%x\n", p->name, faddr);
     //Check totalPages and kill process if appropriate
     if(p->totalPages >= MAX_TOTAL_PAGES) kill(p->pid);
 
@@ -124,7 +125,7 @@ trap(struct trapframe *tf)
       *spage &= ~PTE_P;
       *spage |= PTE_PG;
 
-      mappages(p->pgdir, (void*) &faddr, PGSIZE, saddr, 0);
+      mappages(p->pgdir, (void*) &faddr, PGSIZE, saddr, PTE_P|PTE_W|PTE_U);
 
       //Check if faulted address was swapped out and read in if so
       if (*fpage & PTE_PG) {
@@ -135,6 +136,7 @@ trap(struct trapframe *tf)
         memset((void*) &faddr, PGSIZE, 0);
       }
     }
+
     break;
 
   // ********************************************************************
@@ -164,8 +166,13 @@ trap(struct trapframe *tf)
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
+     tf->trapno == T_IRQ0+IRQ_TIMER) {
+   #if LRU
+      if (myproc() && myproc()->state == RUNNING)
+        lru_update(myproc());
+   #endif
     yield();
+  }
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)

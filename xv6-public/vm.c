@@ -24,6 +24,7 @@ int pagelist_count = 0;
 
 char* my_kalloc(void) {
   int i;
+  cprintf("in my_kalloc\n");
   if (!head) {
     for (i = 0; i < MAX_TOTAL_PAGES; i++) 
       pagelist[i].index = -1;
@@ -49,6 +50,7 @@ char* my_kalloc(void) {
   tail = tail->next;
 
   pagelist_count++;
+  cprintf("returning 0x%x\n", (uint) a);
   return a;
 }
 
@@ -137,17 +139,23 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 
   a = (char*)PGROUNDDOWN((uint)va);
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
+
+  cprintf("in mappages -- proc: %s -- VA: 0x%x -- PA: 0x%x\n", "", a, pa);
   for(;;){
-    if((pte = walkpgdir(pgdir, a, 1)) == 0)
-      return -1;
-    if(*pte & PTE_P)
+    if((pte = walkpgdir(pgdir, a, 1)) == 0) 
+       return -1;
+
+    if(*pte & PTE_P) {
+      cprintf("panic in mappages - cur proc: %s - PTE_P: %d\n", myproc()->name, (*pte & PTE_P));
       panic("remap");
+    }
     *pte = pa | perm | PTE_P;
     if(a == last)
       break;
     a += PGSIZE;
     pa += PGSIZE;
   }
+  cprintf("exit mappages\n");
   return 0;
 }
 
@@ -192,18 +200,26 @@ setupkvm(void)
 {
   pde_t *pgdir;
   struct kmap *k;
+  void* ovirt = 0;
+
+  cprintf("in setupkvm\n");
 
   if((pgdir = (pde_t*)my_kalloc()) == 0)
     return 0;
   memset(pgdir, 0, PGSIZE);
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
+  for(k = kmap; k < &kmap[NELEM(kmap)]; k++) {
+    cprintf("kmap loop - k->virt: 0x%x\n", k->virt);
+    if(ovirt == k->virt) k++;
+    ovirt = k->virt;
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {
       freevm(pgdir);
       return 0;
     }
+  }
+  cprintf("leaving setupkvm\n");
   return pgdir;
 }
 
@@ -260,6 +276,7 @@ inituvm(pde_t *pgdir, char *init, uint sz)
     panic("inituvm: more than a page");
   mem = my_kalloc();
   memset(mem, 0, PGSIZE);
+  cprintf("in inituvm\n");
   mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
   memmove(mem, init, sz);
 }
@@ -310,6 +327,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       return 0;
     }
     memset(mem, 0, PGSIZE);
+    cprintf("in allocuvm\n");
     if(mappages(pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
       cprintf("allocuvm out of memory (2)\n");
       deallocuvm(pgdir, newsz, oldsz);
@@ -395,6 +413,7 @@ copyuvm(pde_t *pgdir, uint sz)
   if((d = setupkvm()) == 0)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
+    cprintf("copyuvm loop\n");
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
@@ -404,6 +423,7 @@ copyuvm(pde_t *pgdir, uint sz)
     if((mem = my_kalloc()) == 0)
       goto bad;
     memmove(mem, (char*)P2V(pa), PGSIZE);
+    cprintf("in copyuvm -- PA: 0x%x\n", pa);
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
       goto bad;
   }
