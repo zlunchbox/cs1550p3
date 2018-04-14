@@ -1,0 +1,23 @@
+   Status   
+------------
+* In its current form, this implementation does not function. Debug
+prints are included in this submission to display the extent of
+functionality.
+
+* The project experiences three forms of crashes, with varying degrees
+of regularity:
+
+	(1) When starting up, a popcli() panic is issued.
+	    This is uncommon.
+
+	(2) Once the user is prompted for a command, issuing
+	    any command will lead to a remap() panic as the
+	    kernel memory is mapped into the new process'
+	    page table. Currently, this issue is slightly
+	    uncommon.
+
+	(3) Once the user is prompted for a command, issuing
+	    any command will lead to a successful mapping of
+	    the kernel's memory; after this, copyuvm() will
+	    run briefly before QEMU crashes on an invalid
+	    RAM/ROM access. This issue is most common.
